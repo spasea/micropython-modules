@@ -2,6 +2,7 @@ import urequests
 import machine
 import uasyncio
 import utime
+import uos
 
 
 class Task:
@@ -55,7 +56,102 @@ class Tasks:
         return self.methods_object
 
     def get_tasks(self):
-        return self.time_object
+        filters = {}
+
+        def get_handler():
+            satisfied_tasks = {}
+
+            for key in self.time_object:
+                task = Task().from_storage(key, self.time_object[key])
+
+                is_satisfied = True
+
+                for idx in filters:
+                    filter = filters[idx]
+
+                    is_satisfied = is_satisfied and filter(task)
+
+                if not is_satisfied:
+                    continue
+
+                satisfied_tasks[key] = self.time_object[key]
+
+            return satisfied_tasks
+
+
+        methods = {
+            'get': get_handler
+        }
+
+        def add_filter(handler):
+            key = uos.urandom(10)
+            filters[key] = handler
+
+        def add_method(method):
+            if method:
+                add_filter(lambda task: method == task.method)
+
+            return methods
+
+        methods['add_method'] = add_method
+
+        def add_name(name):
+            if name:
+                add_filter(lambda task: name == task.name)
+
+            return methods
+
+        methods['add_name'] = add_name
+
+        def add_from_time_start(time_start):
+            if time_start:
+                add_filter(lambda task: time_start < task.time_start)
+
+            return methods
+
+        methods['add_from_time_start'] = add_from_time_start
+
+        def add_to_time_start(time_start):
+            if time_start:
+                add_filter(lambda task: time_start >= task.time_start)
+
+            return methods
+
+        methods['add_to_time_start'] = add_to_time_start
+
+        def add_from_time_end(time_end):
+            if time_end:
+                add_filter(lambda task: time_end < task.time_end)
+
+            return methods
+
+        methods['add_from_time_end'] = add_from_time_end
+
+        def add_to_time_end(time_end):
+            if time_end:
+                add_filter(lambda task: time_end >= task.time_end)
+
+            return methods
+
+        methods['add_to_time_end'] = add_to_time_end
+
+        def add_from_time_diff(time_diff):
+            if time_diff:
+                add_filter(lambda task: time_diff < task.time_diff)
+
+            return methods
+
+        methods['add_from_time_diff'] = add_from_time_diff
+
+        def add_to_time_diff(time_diff):
+            if time_diff:
+                add_filter(lambda task: time_diff >= task.time_diff)
+
+            return methods
+
+        methods['add_to_time_diff'] = add_to_time_diff
+
+        return methods
 
     def add_task(self, method, name, time_start, time_end, time_diff, payload):
         task = Task(method, name, time_start, time_end, time_diff, payload)
