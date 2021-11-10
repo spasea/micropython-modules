@@ -11,13 +11,11 @@ class Station:
 
     def connect(self):
         station = network.WLAN(network.STA_IF)
-        station.active(True)
-
-        station.disconnect()
 
         self.station = station
 
         if not station.isconnected():
+            station.active(True)
             station.connect(self.ssid, self.password)
 
             while not station.isconnected():

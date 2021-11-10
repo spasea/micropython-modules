@@ -36,14 +36,15 @@ class Task:
 
 
 class Tasks:
-    def __init__(self, on_ready):
-        response = urequests.get('http://worldtimeapi.org/api/timezone/Europe/Kiev')
-        object = response.json()
-        [date, time] = object['datetime'].split('T')
-        [year, month, day] = date.split('-')
-        [hours, minutes, seconds] = time[0:8].split(':')
-        rtc = machine.RTC()
-        rtc.init((int(year), int(month), int(day), int(hours), int(minutes), int(seconds), 0, 0))
+    def __init__(self, on_ready, sync_time=False):
+        if sync_time:
+            response = urequests.get('http://worldtimeapi.org/api/timezone/Europe/Kiev')
+            object = response.json()
+            [date, time] = object['datetime'].split('T')
+            [year, month, day] = date.split('-')
+            [hours, minutes, seconds] = time[0:8].split(':')
+            rtc = machine.RTC()
+            rtc.init((int(year), int(month), int(day), int(hours), int(minutes), int(seconds), 0, 0))
 
         on_ready()
 
@@ -77,7 +78,6 @@ class Tasks:
                 satisfied_tasks[key] = self.time_object[key]
 
             return satisfied_tasks
-
 
         methods = {
             'get': get_handler
@@ -201,11 +201,14 @@ class Tasks:
 
                 task = Task().from_storage(key, payload)
 
+                if can_repeat_task:
+                    self.add_task(task.method, task.name, current_time + task.time_diff, task.time_end, task.time_diff,
+                                  task.payload)
+
                 handler_name = '/'.join([task.name, task.method])
                 if handler_name in self.methods_object:
-                    await self.methods_object[handler_name](task.payload)
-
-                if not can_repeat_task:
-                    continue
-
-                self.add_task(task.method, task.name, current_time + task.time_diff, task.time_end, task.time_diff, task.payload)
+                    try:
+                        await self.methods_object[handler_name](task.payload)
+                    except Exception as e:
+                        print(e)
+                        print('tasks main loop')
