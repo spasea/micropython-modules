@@ -3,33 +3,43 @@ import machine
 import uasyncio
 import utime
 import uos
+import random
 
 
 class Task:
-    def __init__(self, method="", name="", time_start=0, time_end=0, time_diff=0, payload={}):
+    def __init__(self, method="", name="", time_start=0, time_end=0, time_diff=0, payload=None, _id=0):
+        if payload is None:
+            payload = {}
+
+        if _id == 0:
+            _id = utime.time() + random.randint(0, 2000)
+
         self.method = method
         self.name = name
         self.time_start = time_start
         self.time_end = time_end
         self.time_diff = time_diff
         self.payload = payload
+        self.id = _id
 
     def is_repeatable(self):
         return self.time_start < self.time_end or self.time_end == 0
 
     def storage_data(self):
-        key = '/'.join([self.name, self.method, str(self.time_start), str(self.time_end), str(self.time_diff)])
+        key = '/'.join(
+            [self.name, self.method, str(self.time_start), str(self.time_end), str(self.time_diff), str(self.id)])
 
         return [key, self.payload]
 
     def from_storage(self, key, payload):
-        [name, method, time_start, time_end, time_diff] = key.split('/')
+        [name, method, time_start, time_end, time_diff, _id] = key.split('/')
 
         self.name = name
         self.method = method
         self.time_start = int(time_start)
         self.time_end = int(time_end)
         self.time_diff = int(time_diff)
+        self.id = int(_id)
         self.payload = payload
 
         return self
@@ -151,10 +161,18 @@ class Tasks:
 
         methods['add_to_time_diff'] = add_to_time_diff
 
+        def add_ids(ids):
+            if len(ids):
+                add_filter(lambda task: str(task.id) in ids)
+
+            return methods
+
+        methods['add_ids'] = add_ids
+
         return methods
 
-    def add_task(self, method, name, time_start, time_end, time_diff, payload):
-        task = Task(method, name, time_start, time_end, time_diff, payload)
+    def add_task(self, method, name, time_start, time_end, time_diff, payload, _id=0):
+        task = Task(method, name, time_start, time_end, time_diff, payload, _id)
         [key, _payload] = task.storage_data()
 
         self.time_object[key] = _payload
@@ -203,7 +221,7 @@ class Tasks:
 
                 if can_repeat_task:
                     self.add_task(task.method, task.name, current_time + task.time_diff, task.time_end, task.time_diff,
-                                  task.payload)
+                                  task.payload, task.id)
 
                 handler_name = '/'.join([task.name, task.method])
                 if handler_name in self.methods_object:
