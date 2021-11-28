@@ -13,6 +13,8 @@ import sys
 import uerrno as errno
 import usocket as socket
 
+from .logger import write
+
 
 class Logging:
     def __init__(self):
@@ -20,9 +22,11 @@ class Logging:
 
     def error(self, e):
         print(e)
+        write('Server error: ' + str(e))
 
     def exc(self, e, str):
         print(e, str)
+        write('Server exc: ' + str(e) + '\n' + str(str))
 
 
 log = Logging()

@@ -5,6 +5,8 @@ import utime
 import uos
 import random
 
+from .logger import write
+
 
 class Task:
     def __init__(self, method="", name="", time_start=0, time_end=0, time_diff=0, payload=None, _id=0):
@@ -228,5 +230,6 @@ class Tasks:
                     try:
                         await self.methods_object[handler_name](task.payload)
                     except Exception as e:
-                        print(e)
-                        print('tasks main loop')
+                        print('tasks main loop: ' + str(e) + '\n' + handler_name + ': ' + str(task.payload))
+                        write('tasks main loop: ' + str(e) + '\n' + handler_name + ': ' + str(task.payload))
+                        print('----\n')
