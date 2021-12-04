@@ -9,7 +9,7 @@ from .logger import write
 
 
 class Task:
-    def __init__(self, method="", name="", time_start=0, time_end=0, time_diff=0, payload=None, _id=0):
+    def __init__(self, method="", module="", time_start=0, time_end=0, time_diff=0, payload=None, _id=0):
         if payload is None:
             payload = {}
 
@@ -17,7 +17,7 @@ class Task:
             _id = utime.time() + random.randint(0, 2000)
 
         self.method = method
-        self.name = name
+        self.module = module
         self.time_start = time_start
         self.time_end = time_end
         self.time_diff = time_diff
@@ -29,14 +29,14 @@ class Task:
 
     def storage_data(self):
         key = '/'.join(
-            [self.name, self.method, str(self.time_start), str(self.time_end), str(self.time_diff), str(self.id)])
+            [self.module, self.method, str(self.time_start), str(self.time_end), str(self.time_diff), str(self.id)])
 
         return [key, self.payload]
 
     def from_storage(self, key, payload):
-        [name, method, time_start, time_end, time_diff, _id] = key.split('/')
+        [module, method, time_start, time_end, time_diff, _id] = key.split('/')
 
-        self.name = name
+        self.module = module
         self.method = method
         self.time_start = int(time_start)
         self.time_end = int(time_end)
@@ -63,8 +63,8 @@ class Tasks:
         self.time_object = {}
         self.methods_object = {}
 
-    def add_method(self, method, name, callback):
-        self.methods_object['/'.join([name, method])] = callback
+    def add_method(self, method, module, callback):
+        self.methods_object['/'.join([module, method])] = callback
 
         return self.methods_object
 
@@ -107,13 +107,13 @@ class Tasks:
 
         methods['add_method'] = add_method
 
-        def add_name(name):
-            if name:
-                add_filter(lambda task: name == task.name)
+        def add_module(module):
+            if module:
+                add_filter(lambda task: module == task.module)
 
             return methods
 
-        methods['add_name'] = add_name
+        methods['add_module'] = add_module
 
         def add_from_time_start(time_start):
             if time_start:
@@ -173,8 +173,8 @@ class Tasks:
 
         return methods
 
-    def add_task(self, method, name, time_start, time_end, time_diff, payload, _id=0):
-        task = Task(method, name, time_start, time_end, time_diff, payload, _id)
+    def add_task(self, method, module, time_start, time_end, time_diff, payload, _id=0):
+        task = Task(method, module, time_start, time_end, time_diff, payload, _id)
         [key, _payload] = task.storage_data()
 
         self.time_object[key] = _payload
@@ -222,14 +222,14 @@ class Tasks:
                 task = Task().from_storage(key, payload)
 
                 if can_repeat_task:
-                    self.add_task(task.method, task.name, current_time + task.time_diff, task.time_end, task.time_diff,
+                    self.add_task(task.method, task.module, current_time + task.time_diff, task.time_end, task.time_diff,
                                   task.payload, task.id)
 
-                handler_name = '/'.join([task.name, task.method])
-                if handler_name in self.methods_object:
+                handler_module = '/'.join([task.module, task.method])
+                if handler_module in self.methods_object:
                     try:
-                        await self.methods_object[handler_name](task.payload)
+                        await self.methods_object[handler_module](task.payload)
                     except Exception as e:
-                        print('tasks main loop: ' + str(e) + '\n' + handler_name + ': ' + str(task.payload))
-                        write('tasks main loop: ' + str(e) + '\n' + handler_name + ': ' + str(task.payload))
+                        print('tasks main loop: ' + str(e) + '\n' + handler_module + ': ' + str(task.payload))
+                        write('tasks main loop: ' + str(e) + '\n' + handler_module + ': ' + str(task.payload))
                         print('----\n')
