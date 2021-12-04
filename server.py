@@ -13,7 +13,7 @@ import sys
 import uerrno as errno
 import usocket as socket
 
-from .logger import write
+from .logger import write_error
 
 
 class Logging:
@@ -22,11 +22,11 @@ class Logging:
 
     def error(self, e):
         print(e)
-        write('Server error: ' + str(e))
+        write_error('Server error: ' + str(e), './server-log.txt')
 
     def exc(self, e, str):
         print(e, str)
-        write('Server exc: ' + str(e) + '\n' + str(str))
+        write_error('Server exc: ' + str(e) + '\n' + str(str), './server-log.txt')
 
 
 log = Logging()
@@ -403,6 +403,8 @@ class webserver:
         self.max_concurrency = max_concurrency
         self.backlog = backlog
         self.debug = debug
+        self.task = None
+        self._server_coro = None
         self.explicit_url_map = {}
         self.catch_all_handler = None
         self.parameterized_url_map = {}
@@ -689,6 +691,13 @@ class webserver:
                     yield False
         except asyncio.CancelledError:
             return
+        except OSError as e:
+            log.exc(e, 'Custom exception next')
+
+            if self.task is not None:
+                self.task.cancel()
+
+                raise Exception('No response')
         finally:
             sock.close()
 
@@ -701,9 +710,11 @@ class webserver:
             loop_forever - run loo.loop_forever(), otherwise caller must run it by itself.
         """
         self._server_coro = self._tcp_server(host, port, self.backlog)
-        self.loop.create_task(self._server_coro)
+        self.task = self.loop.create_task(self._server_coro)
         if loop_forever:
             self.loop.run_forever()
+
+        return self.task
 
     def shutdown(self):
         """Gracefully shutdown Web Server"""
