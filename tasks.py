@@ -63,8 +63,8 @@ class Tasks:
         self.time_object = {}
         self.methods_object = {}
 
-    def add_method(self, module, method, callback):
-        self.methods_object['/'.join([module, method])] = callback
+    def add_method(self, method, name, callback):
+        self.methods_object['/'.join([name, method])] = callback
 
         return self.methods_object
 
