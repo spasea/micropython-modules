@@ -16,7 +16,7 @@ def get_logs(file):
     try:
         with open(file, 'r') as file:
             return file.read()
-    except FileNotFoundError:
+    except OSError:
         file = open(file, 'a')
         file.write('')
         file.close()
