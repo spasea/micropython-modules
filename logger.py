@@ -10,3 +10,14 @@ def write_error(string, file):
 
 def write(string):
     write_error('./log.txt', string)
+
+
+def get_logs(file):
+    try:
+        with open(file, 'r') as file:
+            return file.read()
+    except FileNotFoundError:
+        file = open(file, 'a')
+        file.write('')
+        file.close()
+        return ''
