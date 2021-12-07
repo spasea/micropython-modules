@@ -1,15 +1,22 @@
 # Logger module usage
 
 ```python
-from logger import write, write_error, get_logs
+import logger
 
 
 # Writes to /log.txt file
-write('Error here')
+logger.write('Error here')
 
 # Writes to /extra-log.txt file
-write_error('Specific error', './extra-log.txt')
+logger.write_to_file('Specific error', './extra-log.txt')
 
-# Gets contents of the file
-get_logs('./log.txt')
+# Gets logs path
+logger.get_logs('./log.txt')
+
+# Gets logs content
+logger.read_logs('./log.txt')
+
+# Add a logs formatter with time from last call
+tasks_writer = logger.writer('Tasks')
+tasks_writer('exception here')
 ```

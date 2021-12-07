@@ -1,23 +1,52 @@
 import utime
+import os
 
 
-def write_error(string, file):
+def write_to_file(string, file):
     file = open(file, 'a')
     file.write('\n' + string)
-    file.write('\n' + '----' + str(utime.time()) + '----')
+    print(string)
     file.close()
 
 
 def write(string):
-    write_error('./log.txt', string)
+    write_to_file(string, './log.txt')
 
 
-def get_logs(file):
+def writer(name, file='./log.txt'):
+    time_initialized = utime.time()
+
+    def handler(string):
+        next_time = utime.time()
+        nonlocal time_initialized
+        diff = next_time - time_initialized
+        time_initialized = utime.time()
+        write_to_file('[' + name + ']: ' + string + '; +' + str(diff), file)
+
+    return handler
+
+
+def get_logs(file_path):
     try:
-        with open(file, 'r') as file:
+        is_file_exists = os.stat(file_path)
+
+        if is_file_exists:
+            return file_path
+
+        raise OSError('No such file')
+    except OSError:
+        file = open(file_path, 'a')
+        file.write('')
+        file.close()
+        return file_path
+
+
+def read_logs(file_path):
+    try:
+        with open(file_path, 'r') as file:
             return file.read()
     except OSError:
-        file = open(file, 'a')
+        file = open(file_path, 'a')
         file.write('')
         file.close()
         return ''

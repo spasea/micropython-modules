@@ -13,20 +13,19 @@ import sys
 import uerrno as errno
 import usocket as socket
 
-from .logger import write_error
-
+from .logger import writer
+write_error = writer('Error', './server-log.txt')
+write_exc = writer('Exception', './server-log.txt')
 
 class Logging:
     def __init__(self):
         pass
 
     def error(self, e):
-        print(e)
-        write_error('Server error: ' + str(e), './server-log.txt')
+        write_error(str(e))
 
-    def exc(self, e, str):
-        print(e, str)
-        write_error('Server exc: ' + str(e) + '\n' + str(str), './server-log.txt')
+    def exc(self, e, string):
+        write_exc(str(e) + '; ' + str(string))
 
 
 log = Logging()

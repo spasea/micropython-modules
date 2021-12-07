@@ -5,7 +5,9 @@ import utime
 import uos
 import random
 
-from .logger import write
+from .logger import writer
+
+tasks_writer = writer('Tasks')
 
 
 class Task:
@@ -182,7 +184,7 @@ class Tasks:
         return {'key': key, 'payload': payload}
 
     def delete_task(self, key):
-        if not key in self.time_object:
+        if key not in self.time_object:
             return self.time_object
 
         del self.time_object[key]
@@ -209,6 +211,9 @@ class Tasks:
 
             current_time = utime.time()
 
+            tasks_batch = []
+            last_index = 0
+
             for key in self.time_object:
                 payload = self.time_object[key]
 
@@ -221,15 +226,32 @@ class Tasks:
 
                 task = Task().from_storage(key, payload)
 
-                if can_repeat_task:
-                    self.add_task(task.method, task.module, current_time + task.time_diff, task.time_end, task.time_diff,
-                                  task.payload, task.id)
+                async def add_task(_self, _task):
+                    _self.add_task(_task.method, _task.module, current_time + _task.time_diff, _task.time_end,
+                                   _task.time_diff, _task.payload, _task.id)
+
+                try:
+                    obj = tasks_batch[last_index]
+
+                    if len(obj) > 5:
+                        last_index = last_index + 1
+                        tasks_batch.append([])
+
+                except IndexError:
+                    tasks_batch.append([])
 
                 handler_module = '/'.join([task.module, task.method])
                 if handler_module in self.methods_object:
-                    try:
-                        await self.methods_object[handler_module](task.payload)
-                    except Exception as e:
-                        print('tasks main loop: ' + str(e) + '\n' + handler_module + ': ' + str(task.payload))
-                        write('tasks main loop: ' + str(e) + '\n' + handler_module + ': ' + str(task.payload))
-                        print('----\n')
+                    tasks_batch[last_index].append(uasyncio.create_task(
+                        self.methods_object[handler_module](task.payload)
+                    ))
+                    if can_repeat_task:
+                        tasks_batch[last_index].append(uasyncio.create_task(
+                            add_task(self, task)
+                        ))
+
+            for tasks in tasks_batch:
+                try:
+                    await uasyncio.gather(*tasks)
+                except Exception as e:
+                    tasks_writer('Loop - ' + str(e))
