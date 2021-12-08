@@ -25,6 +25,7 @@ class Task:
         self.time_diff = time_diff
         self.payload = payload
         self.id = _id
+        self._async_task = None
 
     def is_repeatable(self):
         return self.time_start < self.time_end or self.time_end == 0
@@ -45,6 +46,19 @@ class Task:
         self.time_diff = int(time_diff)
         self.id = int(_id)
         self.payload = payload
+
+        return self
+
+    def add_async_task(self, async_task):
+        self._async_task = async_task
+
+        return self
+
+    def cancel(self):
+        if self._async_task is None:
+            return self
+
+        self._async_task.cancel()
 
         return self
 
@@ -209,9 +223,8 @@ class Tasks:
         while True:
             await uasyncio.sleep(5)
 
-            current_time = utime.time()
-
             tasks_batch = []
+            repeats_batch = []
             last_index = 0
 
             for key in self.time_object:
@@ -227,31 +240,45 @@ class Tasks:
                 task = Task().from_storage(key, payload)
 
                 async def add_task(_self, _task):
-                    _self.add_task(_task.method, _task.module, current_time + _task.time_diff, _task.time_end,
+                    _self.add_task(_task.method, _task.module, utime.time() + _task.time_diff, _task.time_end,
                                    _task.time_diff, _task.payload, _task.id)
 
                 try:
                     obj = tasks_batch[last_index]
 
-                    if len(obj) > 5:
+                    if len(obj) > 3:
                         last_index = last_index + 1
                         tasks_batch.append([])
+                        repeats_batch.append([])
 
                 except IndexError:
                     tasks_batch.append([])
+                    repeats_batch.append([])
 
                 handler_module = '/'.join([task.module, task.method])
                 if handler_module in self.methods_object:
                     tasks_batch[last_index].append(uasyncio.create_task(
-                        self.methods_object[handler_module](task.payload)
+                        self.methods_object[handler_module](task)
                     ))
                     if can_repeat_task:
-                        tasks_batch[last_index].append(uasyncio.create_task(
+                        async_task = uasyncio.create_task(
                             add_task(self, task)
-                        ))
+                        )
+                        task.add_async_task(async_task)
+                        repeats_batch[last_index].append(async_task)
 
             for tasks in tasks_batch:
                 try:
                     await uasyncio.gather(*tasks)
+                except uasyncio.CancelledError:
+                    pass
                 except Exception as e:
                     tasks_writer('Loop - ' + str(e))
+
+            for repeat_batch in repeats_batch:
+                try:
+                    await uasyncio.gather(*repeat_batch)
+                except uasyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    tasks_writer('Repeats - ' + str(e))

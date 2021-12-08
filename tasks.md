@@ -18,8 +18,11 @@ loop.run_until_complete(
 )
 
 # Registering task
-async def number_print_handler(_payload):
-    print(float(_payload['next_number']))
+async def number_print_handler(_task):
+    # also task can be cancelled
+    _task.cancel()
+    
+    print(float(_task.payload['next_number']))
     
 tasks_instance.add_method('print', 'number', number_print_handler)
 
