@@ -117,7 +117,7 @@ class Tasks:
 
         def add_method(method):
             if method:
-                add_filter(lambda task: method == task.method)
+                add_filter(lambda task: task.method in method.split(','))
 
             return methods
 
