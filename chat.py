@@ -7,9 +7,19 @@ class Message:
         self.chat_id = chat_id
 
     def send_message(self, message):
-        response = urequests.get('https://api.telegram.org/'
-                                 + str(self.bot_id)
-                                 + '/sendMessage?chat_id='
-                                 + str(self.chat_id)
-                                 + '&text=' + message)
-        print(response.text)
+        url = 'https://api.telegram.org/bot' + str(self.bot_id) + '/sendMessage?chat_id=' + str(
+            self.chat_id) + '&text=' + message
+
+        response = urequests.get(url)
+        return response.json()
+
+    def get_updates(self, offset, updates=None, timeout=0):
+        if updates is None:
+            updates = []
+
+        url = 'https://api.telegram.org/bot' + str(self.bot_id) + '/getUpdates?offset=' + str(
+            offset) + '&allowed_updates=' + str(updates) + '&timeout=' + str(timeout)
+
+        response = urequests.get(url)
+
+        return response.json()
