@@ -2,18 +2,18 @@ import urequests
 
 
 class Message:
-    def __init__(self, chat_id, bot_id):
+    def __init__(self, chat_id: str, bot_id: str):
         self.bot_id = bot_id
         self.chat_id = chat_id
 
-    def send_message(self, message):
+    def send_message(self, message: str) -> dict:
         url = 'https://api.telegram.org/bot' + str(self.bot_id) + '/sendMessage?chat_id=' + str(
             self.chat_id) + '&text=' + message
 
         response = urequests.get(url)
         return response.json()
 
-    def get_updates(self, offset, updates=None, timeout=0):
+    def get_updates(self, offset: int, updates: list = None, timeout: int = 0) -> dict:
         if updates is None:
             updates = []
 
