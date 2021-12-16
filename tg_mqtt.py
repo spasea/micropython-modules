@@ -96,7 +96,7 @@ class TGMqtt:
 
                 if parsed_message['topic'] not in self.topics or \
                         parsed_message['update_id'] in self.update_ids or \
-                        parsed_message['publisher'] == self.id:
+                        (parsed_message['publisher'] == self.id and not parsed_message['topic'].startswith('service')):
                     continue
 
                 try:

@@ -1,4 +1,4 @@
-# Tasks module usage
+# TG mqtt module usage
 
 ```python
 import uasyncio
@@ -29,4 +29,8 @@ mqtt_instance.publish({
 
 # or with plain text
 mqtt_instance.publish({}, 'test:text', 'Text here')
+
+# Also messages are filtered, so the client who posted a message
+# wont receive the message except the topic starts with 'service' 
+# keyword 
 ```
