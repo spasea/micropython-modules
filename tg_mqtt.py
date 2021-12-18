@@ -24,11 +24,14 @@ class TGMqtt:
         self.last_update = -1
         self.waiting_time = round(random_float(0.5, 2) * 1000)
 
-    async def publish(self, data: dict, topic: str, text: str = ''):
+    async def publish(self, topic: str, data: dict or None = None, text: str = '', reply_id: int or None = None):
+        if data is None:
+            data = {}
         data = json.dumps({
             'data': data,
             'topic': topic,
             'text': text,
+            'reply_id': reply_id,
             'publisher': self.id,
         })
 
@@ -41,9 +44,11 @@ class TGMqtt:
             content = {
                 "text": content_json['text'] if 'text' in content_json else '',
                 "topic": content_json['topic'] if 'topic' in content_json else '',
+                "reply_id": content_json['reply_id'] if 'reply_id' in content_json else None,
                 "data": content_json['data'] if 'data' in content_json else {},
                 "publisher": content_json['publisher'] if 'publisher' in content_json else 0,
                 "update_id": update["update_id"],
+                "id": update["channel_post"]["message_id"],
                 "update_time": update["channel_post"]["date"],
             }
 
@@ -51,7 +56,8 @@ class TGMqtt:
         except Exception as e:
             sys.print_exception(e)
             content = {"data": {}, "topic": "", "update_id": 0, "update_time": 0, "publisher": 0,
-                       "text": update['channel_post']['text']}
+                       "text": update['channel_post']['text'], "reply_id": None,
+                       "id": update['channel_post']['message_id']}
 
         return content
 
@@ -118,6 +124,7 @@ class TGMqtt:
                 except uasyncio.CancelledError:
                     pass
                 except Exception as e:
+                    sys.print_exception(e)
                     mqtt_writer('MQTT topics execution - ' + str(e))
 
         except Exception as e:

@@ -23,9 +23,9 @@ loop = uasyncio.new_event_loop()
 loop.run_until_complete(mqtt_main())
 
 # Publish messages with data
-mqtt_instance.publish({
+mqtt_instance.publish(data={
     'test': 123
-}, 'test:data')
+}, topic='test:data')
 
 # or with plain text
 mqtt_instance.publish({}, 'test:text', 'Text here')
