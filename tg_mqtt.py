@@ -50,6 +50,7 @@ class TGMqtt:
                 "update_id": update["update_id"],
                 "id": update["channel_post"]["message_id"],
                 "update_time": update["channel_post"]["date"],
+                "message_id": update["channel_post"]["message_id"],
             }
 
             del content_json
@@ -102,7 +103,7 @@ class TGMqtt:
 
                 if parsed_message['topic'] not in self.topics or \
                         parsed_message['update_id'] in self.update_ids or \
-                        (parsed_message['publisher'] == self.id and not parsed_message['topic'].startswith('service')):
+                        (str(parsed_message['publisher']) == str(self.id) and not parsed_message['topic'].startswith('service')):
                     continue
 
                 try:
