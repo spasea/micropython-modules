@@ -13,12 +13,12 @@ class Message:
         response = urequests.get(url)
         return response.json()
 
-    def get_updates(self, offset: int, updates: list = None, timeout: int = 0) -> dict:
+    def get_updates(self, offset: int, updates: list = None, timeout: int = 0, limit: int = 100) -> dict:
         if updates is None:
             updates = []
 
         url = 'https://api.telegram.org/bot' + str(self.bot_id) + '/getUpdates?offset=' + str(
-            offset) + '&allowed_updates=' + str(updates) + '&timeout=' + str(timeout)
+            offset) + '&allowed_updates=' + str(updates) + '&timeout=' + str(timeout) + '&limit=' + str(limit)
 
         response = urequests.get(url)
 

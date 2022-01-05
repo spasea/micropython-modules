@@ -15,13 +15,14 @@ def random_float(min_num, max_num):
 
 
 class TGMqtt:
-    def __init__(self, sub_chat: Message, pub_chat: Message):
+    def __init__(self, sub_chat: Message, pub_chat: Message, limit: int = 100):
         self.id = random_float(1, 10000)
         self.sub = sub_chat
         self.pub = pub_chat
         self.topics = {}
         self.update_ids = {}
         self.last_update = -1
+        self.limit = limit
         self.waiting_time = round(random_float(0.5, 2) * 1000)
 
     async def publish(self, topic: str, data: dict or None = None, text: str = '', reply_id: int or None = None):
@@ -83,8 +84,8 @@ class TGMqtt:
             res = self.sub.get_updates(self.last_update, ["channel_post"])
             updates = res['result']
 
-            if len(updates) == 100:
-                self.last_update = updates[round(len(updates) / 4) - 1]['update_id']
+            if len(updates) == self.limit:
+                self.last_update = updates[round(self.limit * 0.2) - 1]['update_id']
 
                 return
 
