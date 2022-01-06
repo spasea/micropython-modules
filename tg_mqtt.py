@@ -7,7 +7,7 @@ import sys
 from .chat import Message
 from .logger import writer
 
-mqtt_writer = writer('MQTT', './mqtt.txt')
+mqtt_writer = writer('MQTT', './mqtt-log.txt')
 
 
 def random_float(min_num, max_num):
@@ -15,13 +15,13 @@ def random_float(min_num, max_num):
 
 
 class TGMqtt:
-    def __init__(self, sub_chat: Message, pub_chat: Message, limit: int = 100):
-        self.id = random_float(1, 10000)
+    def __init__(self, sub_chat: Message, pub_chat: Message, limit: int = 40, _id=None):
+        self.id = _id or random_float(1, 10000)
         self.sub = sub_chat
         self.pub = pub_chat
         self.topics = {}
         self.update_ids = {}
-        self.last_update = -1
+        self.last_update = 0
         self.limit = limit
         self.waiting_time = round(random_float(0.5, 2) * 1000)
 
@@ -81,7 +81,7 @@ class TGMqtt:
         utime.sleep_ms(self.waiting_time)
 
         try:
-            res = self.sub.get_updates(self.last_update, ["channel_post"])
+            res = self.sub.get_updates(offset=self.last_update, updates=["channel_post"], limit=self.limit)
             updates = res['result']
 
             if len(updates) == self.limit:
@@ -96,9 +96,6 @@ class TGMqtt:
             for update in updates:
                 if not str(update['channel_post']['chat']['id']) == self.sub.chat_id:
                     continue
-
-                if self.last_update == -1:
-                    self.last_update = update['update_id']
 
                 parsed_message = self.parse_update(update)
 
