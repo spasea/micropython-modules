@@ -1,20 +1,46 @@
+import sys
+
 import network
+import utime
+
+from .lamp import Lamp
+from .logger import writer
+from .tasks import tasks_instance
+
+station_writer = writer('Station')
+lamp_writer = writer('Lamp')
 
 
 class Station:
-    def __init__(self, ssid='', password='', single_string=''):
+    def __init__(self, ssid='', password='', single_string='', lamp: Lamp or None = None):
         self.station = ''
+        self.lamp = lamp
+        self.is_lamp_blinking = False
 
         if single_string != '':
             self.single_string = single_string
-            self.find()
+            self.add_tasks()
+            try:
+                self.find()
+            except Exception as e:
+                station_writer(e)
 
             return
 
         self.password = password
         self.ssid = ssid
 
-        self.connect()
+        self.add_tasks()
+        try:
+            self.connect()
+        except Exception as e:
+            station_writer(e)
+
+    def add_tasks(self):
+        now_time = utime.time()
+
+        tasks_instance.add_method('check-connection', 'station', self.check_connection)
+        tasks_instance.add_task('check-connection', 'station', now_time, now_time + 525600, 15, {})
 
     def find(self):
         station = network.WLAN(network.STA_IF)
@@ -62,3 +88,36 @@ class Station:
 
             while not station.isconnected():
                 pass
+
+            self.lamp.blink(2)
+
+    async def check_connection(self, task):
+        def turn_off_lamp():
+            for key in tasks_instance.get_tasks()['add_method']('lamp-indicator')['add_module']('station')['get']():
+                tasks_instance.delete_task(key)
+
+            self.is_lamp_blinking = False
+
+        if self.station and self.station.isconnected():
+            turn_off_lamp()
+
+            return
+
+        if self.lamp and not self.is_lamp_blinking:
+            now_time = utime.time()
+            lamp_inst = self.lamp
+
+            async def handler(task):
+                lamp_writer('Lamp blinking')
+                lamp_inst.blink(3)
+
+            tasks_instance.add_method('lamp-indicator', 'station', handler)
+            tasks_instance.add_task('lamp-indicator', 'station', now_time, now_time + 525600, 15, {})
+            self.is_lamp_blinking = True
+
+        try:
+            self.find()
+            turn_off_lamp()
+        except Exception as e:
+            sys.print_exception(e)
+            station_writer(e)
