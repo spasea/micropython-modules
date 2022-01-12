@@ -84,11 +84,6 @@ class TGMqtt:
             res = self.sub.get_updates(offset=self.last_update, updates=["channel_post"], limit=self.limit)
             updates = res['result']
 
-            if len(updates) == self.limit:
-                self.last_update = updates[round(self.limit * 0.2) - 1]['update_id']
-
-                return
-
             messages = []
             max_messages_in_batch = 5
             messages_batch_idx = 0
@@ -126,6 +121,10 @@ class TGMqtt:
                     sys.print_exception(e)
                     mqtt_writer('MQTT topics execution - ' + str(e))
 
+            if len(updates) == self.limit:
+                self.last_update = updates[round(self.limit * 0.2) - 1]['update_id']
+
         except Exception as e:
             sys.print_exception(e)
             mqtt_writer('request e ' + str(e))
+            self.last_update = -1

@@ -7,14 +7,14 @@ from .tg_mqtt import TGMqtt
 
 
 def run(_handler, config, _tasks_handler=None, _config_mqtt_chat='mqtt_chat', _config_mqtt_sub='mqtt_sub',
-        _config_mqtt_pub='mqtt_pub', __id=None):
+        _config_mqtt_pub='mqtt_pub', __id=None, _limit=40):
     loop = uasyncio.new_event_loop()
 
     def handler():
         return 1
 
     mqtt_instance = TGMqtt(Message(config[_config_mqtt_chat], config[_config_mqtt_sub]),
-                           Message(config[_config_mqtt_chat], config[_config_mqtt_pub]), _id=__id)
+                           Message(config[_config_mqtt_chat], config[_config_mqtt_pub]), _id=__id, limit=_limit)
     tasks_instance = Tasks(_tasks_handler or handler)
 
     client_tasks = _handler(tasks_instance, mqtt_instance)
