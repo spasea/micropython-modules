@@ -64,7 +64,7 @@ class Task:
 
 
 class Tasks:
-    def __init__(self, on_ready, sync_time=False):
+    def __init__(self, on_ready=None, sync_time=False):
         if sync_time:
             response = urequests.get('http://worldtimeapi.org/api/timezone/Europe/Kiev')
             object = response.json()
@@ -74,7 +74,8 @@ class Tasks:
             rtc = machine.RTC()
             rtc.init((int(year), int(month), int(day), int(hours), int(minutes), int(seconds), 0, 0))
 
-        on_ready()
+        if on_ready:
+            on_ready()
 
         self.time_object = {}
         self.methods_object = {}
@@ -282,3 +283,6 @@ class Tasks:
                     pass
                 except Exception as e:
                     tasks_writer('Repeats - ' + str(e))
+
+
+tasks_instance = Tasks()

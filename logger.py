@@ -21,7 +21,7 @@ def writer(name, file='./log.txt'):
         nonlocal time_initialized
         diff = next_time - time_initialized
         time_initialized = utime.time()
-        write_to_file('[' + name + ']: ' + string + '; +' + str(diff), file)
+        write_to_file('[' + name + ', ' + str(next_time) + ']: ' + str(string) + '; +' + str(diff), file)
 
     return handler
 
