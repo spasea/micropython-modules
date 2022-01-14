@@ -127,4 +127,4 @@ class TGMqtt:
         except Exception as e:
             sys.print_exception(e)
             mqtt_writer('request e ' + str(e))
-            self.last_update = -1
+            self.last_update = self.last_update + round(self.limit * 0.2)
