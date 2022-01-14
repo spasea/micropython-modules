@@ -1,3 +1,5 @@
+import json
+
 import urequests
 import machine
 import uasyncio
@@ -6,6 +8,7 @@ import uos
 import random
 
 from .logger import writer
+from .state_save import StateSaveInterface
 
 tasks_writer = writer('Tasks')
 
@@ -63,7 +66,7 @@ class Task:
         return self
 
 
-class Tasks:
+class Tasks(StateSaveInterface):
     def __init__(self, on_ready=None, sync_time=False):
         if sync_time:
             response = urequests.get('http://worldtimeapi.org/api/timezone/Europe/Kiev')
@@ -79,6 +82,15 @@ class Tasks:
 
         self.time_object = {}
         self.methods_object = {}
+
+    def to_string(self) -> str:
+        return json.dumps(self.time_object)
+
+    def from_string(self, string: str) -> 'Tasks':
+        times = json.loads(string)
+        self.time_object.update(times)
+
+        return self
 
     def add_method(self, method, module, callback):
         self.methods_object['/'.join([module, method])] = callback
