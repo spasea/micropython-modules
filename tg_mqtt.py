@@ -14,6 +14,25 @@ def random_float(min_num, max_num):
     return random.random() * (max_num - min_num) + min_num
 
 
+class Topic:
+    def __init__(self, main_id: str, target_id: str):
+        self.main_id = main_id
+        self.target_id = target_id
+        self.separator = ':'
+
+    def base_id(self) -> str:
+        return self.separator.join([self.main_id, self.target_id])
+
+    def status(self) -> str:
+        return self.separator.join([self.base_id(), 'status'])
+
+    def change_state(self) -> str:
+        return self.separator.join([self.base_id(), 'change-state'])
+
+    def automation(self) -> str:
+        return self.separator.join([self.base_id(), 'automation'])
+
+
 class TGMqtt:
     def __init__(self, sub_chat: Message, pub_chat: Message, limit: int = 40, _id=None):
         self.id = _id or random_float(1, 10000)
@@ -96,7 +115,8 @@ class TGMqtt:
 
                 if parsed_message['topic'] not in self.topics or \
                         parsed_message['update_id'] in self.update_ids or \
-                        (str(parsed_message['publisher']) == str(self.id) and not parsed_message['topic'].startswith('service')):
+                        (str(parsed_message['publisher']) == str(self.id) and not parsed_message['topic'].startswith(
+                            'service')):
                     continue
 
                 try:
