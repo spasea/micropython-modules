@@ -86,7 +86,7 @@ class Tasks(StateSaveInterface):
     def to_string(self) -> str:
         return json.dumps(self.time_object)
 
-    def from_string(self, string: str) -> 'Tasks':
+    def from_string(self, string: str, last_loaded_time: tuple) -> 'Tasks':
         times = json.loads(string)
         self.time_object.update(times)
 
