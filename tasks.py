@@ -84,6 +84,10 @@ class Tasks(StateSaveInterface):
         self.methods_object = {}
 
     def to_string(self) -> str:
+        tasks_to_delete = self.get_tasks()['add_method']('check')['add_module']('mqtt')['get']()
+        for task in tasks_to_delete:
+            tasks_to_delete[task].cancel()
+
         return json.dumps(self.time_object)
 
     def from_string(self, string: str, last_loaded_time: tuple) -> 'Tasks':
