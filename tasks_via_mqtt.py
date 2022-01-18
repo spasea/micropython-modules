@@ -63,6 +63,6 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
 
     tasks_instance.add_method('reset', 'system', reset_module)
     # now time + 24h seconds
-    tasks_instance.add_task('reset', 'system', now_time + 100, now_time + 2440, 0, {})
+    tasks_instance.add_task('reset', 'system', now_time + 1440, now_time + 2440, 0, {})
 
     loop.run_until_complete(uasyncio.gather(tasks_instance.main()))
