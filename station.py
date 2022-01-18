@@ -39,8 +39,9 @@ class Station:
     def add_tasks(self):
         now_time = utime.time()
 
-        tasks_instance.add_method('check-connection', 'station', self.check_connection)
-        tasks_instance.add_task('check-connection', 'station', now_time, now_time + 525600, 15, {})
+        tasks_instance.add_method('station:check-connection', 'non-savable', self.check_connection)
+        # year in seconds
+        tasks_instance.add_task('station:check-connection', 'non-savable', now_time, now_time + 86400*365, 15, {})
 
     def find(self):
         station = network.WLAN(network.STA_IF)
@@ -112,7 +113,8 @@ class Station:
                 lamp_inst.blink(3)
 
             tasks_instance.add_method('lamp-indicator', 'station', handler)
-            tasks_instance.add_task('lamp-indicator', 'station', now_time, now_time + 525600, 15, {})
+            # year in seconds
+            tasks_instance.add_task('lamp-indicator', 'station', now_time, now_time + 86400*365, 15, {})
             self.is_lamp_blinking = True
 
         try:

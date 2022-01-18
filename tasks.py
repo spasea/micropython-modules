@@ -84,7 +84,7 @@ class Tasks(StateSaveInterface):
         self.methods_object = {}
 
     def to_string(self) -> str:
-        tasks_to_delete = self.get_tasks()['add_method']('check')['add_module']('mqtt')['get']()
+        tasks_to_delete = self.get_tasks()['add_module']('non-savable')['get']()
         for task in tasks_to_delete:
             tasks_to_delete[task].cancel()
 
