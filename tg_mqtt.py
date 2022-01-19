@@ -35,6 +35,9 @@ class Topic:
     def automation(self) -> str:
         return self.separator.join([self.base_id(), 'automation'])
 
+    def automation_run(self) -> str:
+        return self.separator.join([self.automation(), 'run'])
+
 
 class TGMqtt:
     def __init__(self, sub_chat: Message, pub_chat: Message, limit: int = 40, _id=None):
