@@ -23,6 +23,9 @@ class Topic:
     def base_id(self) -> str:
         return self.separator.join([self.main_id, self.target_id])
 
+    def publisher(self) -> str:
+        return '-'.join([self.base_id(), 'publisher'])
+
     def status(self) -> str:
         return self.separator.join([self.base_id(), 'status'])
 
