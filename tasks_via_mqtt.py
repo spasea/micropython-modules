@@ -7,7 +7,7 @@ import sys
 
 from .chat import Message
 from .state_save import StateSaveInterface
-from .tasks import tasks_instance
+from .tasks import tasks_instance, Task
 from .tg_mqtt import TGMqtt
 
 
@@ -36,7 +36,8 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
     now_time = utime.time()
 
     # now time + year seconds
-    tasks_instance.add_task('mqtt:check', 'non-savable', now_time, now_time + 86400 * 365, 0, {})
+    tasks_instance.add_task(Task(method='mqtt:check', module='non-savable', time_start=now_time,
+                                 time_end=now_time + 86400 * 365))
     machine.RTC().init(general_state_config['time'])
     _sensor_state.from_string(general_state_config['sensor'], general_state_config['time'])
     _sensor_mqtt_tasks_handler(mqtt_instance)
@@ -44,6 +45,9 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
     async def reset_module(task):
         def handler():
             tasks_string = tasks_instance.to_string()
+
+            print(tasks_string)
+
             sensor_string = _sensor_state.to_string()
 
             with open('./app/general-config.json', 'w') as file:
@@ -63,7 +67,9 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
 
     tasks_instance.add_method('reset', 'system', reset_module)
     # now time + 8h seconds
-    reset_time = _reset_time_h * 60 * 60
-    tasks_instance.add_task('reset', 'system', now_time + reset_time, now_time + reset_time + 1000, 0, {})
+    reset_time = int(_reset_time_h * 60 * 60)
+    tasks_instance.add_task(
+        Task(method='reset', module='system', time_start=now_time + reset_time, time_end=now_time + reset_time + 1000,
+             is_last_priority=True))
 
     loop.run_until_complete(uasyncio.gather(tasks_instance.main()))

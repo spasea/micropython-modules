@@ -1,7 +1,7 @@
 # Tasks module usage
 
 ```python
-from tasks import Tasks
+from tasks import Tasks, Task
 import uasyncio
 
 # Initialization goes in your main method
@@ -28,8 +28,8 @@ tasks_instance.add_method('print', 'number', number_print_handler)
 
 # Adding task to be run 
 # now time is 100
-tasks_instance.add_task('print', 'number', 115, 200, 15, {
+tasks_instance.add_task(Task('print', 'number', 115, 200, 15, {
     'next_number': 12
-})
+}))
 # Then this task will be executed until server time will be 200 or greater
 ```

@@ -5,7 +5,7 @@ import utime
 
 from .lamp import Lamp
 from .logger import writer
-from .tasks import tasks_instance
+from .tasks import tasks_instance, Task
 
 station_writer = writer('Station')
 lamp_writer = writer('Lamp')
@@ -41,7 +41,9 @@ class Station:
 
         tasks_instance.add_method('station:check-connection', 'non-savable', self.check_connection)
         # year in seconds
-        tasks_instance.add_task('station:check-connection', 'non-savable', now_time, now_time + 86400*365, 15, {})
+        tasks_instance.add_task(
+            Task(method='station:check-connection', module='non-savable', time_start=now_time, time_end=now_time + 86400 * 365,
+                 time_diff=15))
 
     def find(self):
         station = network.WLAN(network.STA_IF)
@@ -114,7 +116,7 @@ class Station:
 
             tasks_instance.add_method('lamp-indicator', 'station', handler)
             # year in seconds
-            tasks_instance.add_task('lamp-indicator', 'station', now_time, now_time + 86400*365, 15, {})
+            tasks_instance.add_task(Task('lamp-indicator', 'station', now_time, now_time + 86400 * 365, 15))
             self.is_lamp_blinking = True
 
         try:
