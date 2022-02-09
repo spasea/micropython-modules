@@ -66,10 +66,10 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
             print(e)
 
     tasks_instance.add_method('system:reset', 'non-savable', reset_module)
-    # now time + 8h seconds
+    # now time + 2h seconds
     reset_time = int(_reset_time_h * 60 * 60)
     tasks_instance.add_task(
-        Task(method='system:reset', module='non-savable', time_start=now_time + reset_time, time_end=now_time + reset_time + 1000,
-             is_last_priority=True))
+        Task(method='system:reset', module='non-savable', time_start=now_time + reset_time,
+             time_end=now_time + reset_time + 1000, is_last_priority=1))
 
     loop.run_until_complete(uasyncio.gather(tasks_instance.main()))
