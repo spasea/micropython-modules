@@ -261,7 +261,7 @@ class Tasks(StateSaveInterface):
             return handler
 
         while True:
-            await uasyncio.sleep(5)
+            await uasyncio.sleep(random.randint(3, 6))
 
             tasks_batch = []
             tasks_batch_keys = []
