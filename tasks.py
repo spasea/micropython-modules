@@ -15,7 +15,7 @@ tasks_writer = writer('Tasks')
 
 class Task:
     def __init__(self, method="", module="", time_start=0, time_end=0, time_diff=0, payload=None, _id=0,
-                 is_last_priority: bool = False):
+                 is_last_priority: int = 0):
         if payload is None:
             payload = {}
 
@@ -37,12 +37,13 @@ class Task:
 
     def storage_data(self):
         key = '/'.join(
-            [self.module, self.method, str(self.time_start), str(self.time_end), str(self.time_diff), str(self.id)])
+            [self.module, self.method, str(self.time_start), str(self.time_end), str(self.time_diff), str(self.id),
+             str(self.is_last_priority)])
 
         return [key, self.payload]
 
     def from_storage(self, key, payload):
-        [module, method, time_start, time_end, time_diff, _id] = key.split('/')
+        [module, method, time_start, time_end, time_diff, _id, is_last_priority] = key.split('/')
 
         self.module = module
         self.method = method
@@ -51,6 +52,7 @@ class Task:
         self.time_diff = int(time_diff)
         self.id = int(_id)
         self.payload = payload
+        self.is_last_priority = int(is_last_priority)
 
         return self
 
@@ -99,7 +101,10 @@ class Tasks(StateSaveInterface):
         return self
 
     def add_method(self, method, module, callback):
-        self.methods_object['/'.join([module, method])] = callback
+        async def handler(task):
+            await callback(task)
+
+        self.methods_object['/'.join([module, method])] = handler
 
         return self.methods_object
 
@@ -237,13 +242,33 @@ class Tasks(StateSaveInterface):
 
         return [is_task_valid, can_execute_task, can_repeat_task]
 
+    async def get_async_tasks(self, async_batch):
+        async_list = []
+
+        for handler in async_batch:
+            async_list.append(handler())
+
+        await uasyncio.gather(*async_list)
+
     async def main(self):
+        def task_handler(__task, _self):
+            _task = Task().from_storage(*json.loads(json.dumps(__task.storage_data())))
+
+            async def handler():
+                _task.time_start = utime.time() + _task.time_diff
+                _self.add_task(_task)
+
+            return handler
+
         while True:
             await uasyncio.sleep(5)
 
             tasks_batch = []
+            tasks_batch_keys = []
             last_priority_tasks_batch = []
+            last_priority_tasks_batch_keys = []
             repeats_batch = []
+            repeats_batch_keys = []
             last_index = 0
 
             for key in self.time_object:
@@ -258,70 +283,74 @@ class Tasks(StateSaveInterface):
 
                 task = Task().from_storage(key, payload)
 
-                async def add_task(_self, _task: Task):
-                    _task.time_start = utime.time() + _task.time_diff
-                    _self.add_task(_task)
+                def append_task(_task: Task, _handler):
+                    task_key = _task.storage_data()[0]
 
-                def append_task(_task: Task, _handler_module, _last_index, _methods_object):
-                    if _task.is_last_priority:
-                        last_priority_tasks_batch[_last_index].append(uasyncio.create_task(
-                            _methods_object[_handler_module](_task)
-                        ))
+                    async def _task_handler():
+                        await _handler(_task)
+
+                    if bool(_task.is_last_priority):
+                        last_priority_tasks_batch[last_index].append(_task_handler)
+
+                        last_priority_tasks_batch_keys[last_index].append(task_key)
 
                         return
 
-                    tasks_batch[_last_index].append(uasyncio.create_task(
-                        _methods_object[_handler_module](_task)
-                    ))
+                    tasks_batch[last_index].append(_task_handler)
+
+                    tasks_batch_keys[last_index].append(task_key)
 
                 try:
                     obj = tasks_batch[last_index]
 
-                    if len(obj) > 3:
+                    if len(obj) > 5:
                         last_index = last_index + 1
                         tasks_batch.append([])
+                        tasks_batch_keys.append([])
                         repeats_batch.append([])
+                        repeats_batch_keys.append([])
                         last_priority_tasks_batch.append([])
+                        last_priority_tasks_batch_keys.append([])
 
                 except IndexError:
                     tasks_batch.append([])
+                    tasks_batch_keys.append([])
                     repeats_batch.append([])
+                    repeats_batch_keys.append([])
                     last_priority_tasks_batch.append([])
+                    last_priority_tasks_batch_keys.append([])
 
                 handler_module = '/'.join([task.module, task.method])
                 if handler_module in self.methods_object:
-                    append_task(task, handler_module, last_index, self.methods_object)
+                    append_task(task, self.methods_object[handler_module])
 
-                    if can_repeat_task:
-                        async_task = uasyncio.create_task(
-                            add_task(self, task)
-                        )
-                        task.add_async_task(async_task)
-                        repeats_batch[last_index].append(async_task)
+                    if can_repeat_task and not task.is_last_priority:
+                        repeats_batch[last_index].append(task_handler(task, self))
+                        repeats_batch_keys[last_index].append(task.storage_data()[0])
 
             for tasks in tasks_batch:
                 try:
-                    await uasyncio.gather(*tasks)
+                    await self.get_async_tasks(tasks)
                 except uasyncio.CancelledError:
                     pass
                 except Exception as e:
-                    tasks_writer('Loop - ' + str(e))
+                    tasks_writer('Loop error: ' + str(e))
 
             for repeat_batch in repeats_batch:
                 try:
-                    await uasyncio.gather(*repeat_batch)
+                    await self.get_async_tasks(repeat_batch)
                 except uasyncio.CancelledError:
                     pass
                 except Exception as e:
-                    tasks_writer('Repeats - ' + str(e))
+                    tasks_writer('Repeats error: ' + str(e))
 
             for last_tasks in last_priority_tasks_batch:
                 try:
-                    await uasyncio.gather(*last_tasks)
+                    await self.get_async_tasks(last_tasks)
                 except uasyncio.CancelledError:
                     pass
                 except Exception as e:
-                    tasks_writer('Loop - ' + str(e))
+                    tasks_writer('Last error: ' + str(e))
 
 
 tasks_instance = Tasks()

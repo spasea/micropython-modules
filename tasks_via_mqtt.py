@@ -12,7 +12,7 @@ from .tg_mqtt import TGMqtt
 
 
 def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _config_mqtt_chat='mqtt_chat',
-        _config_mqtt_sub='mqtt_sub', _reset_time_h: float = 8,
+        _config_mqtt_sub='mqtt_sub', _reset_time_h: float = 2,
         _config_mqtt_pub='mqtt_pub', __id=None, _limit=40):
     loop = uasyncio.new_event_loop()
 
@@ -65,11 +65,11 @@ def run(_sensor_mqtt_tasks_handler, _sensor_state: StateSaveInterface, config, _
             sys.print_exception(e)
             print(e)
 
-    tasks_instance.add_method('reset', 'system', reset_module)
+    tasks_instance.add_method('system:reset', 'non-savable', reset_module)
     # now time + 8h seconds
     reset_time = int(_reset_time_h * 60 * 60)
     tasks_instance.add_task(
-        Task(method='reset', module='system', time_start=now_time + reset_time, time_end=now_time + reset_time + 1000,
+        Task(method='system:reset', module='non-savable', time_start=now_time + reset_time, time_end=now_time + reset_time + 1000,
              is_last_priority=True))
 
     loop.run_until_complete(uasyncio.gather(tasks_instance.main()))
