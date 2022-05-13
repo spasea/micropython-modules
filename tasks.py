@@ -71,9 +71,11 @@ class Task:
 
 
 class Tasks(StateSaveInterface):
-    def __init__(self, on_ready=None, sync_time=False):
+    def __init__(self, on_ready=None, sync_time=False, time_endpoint=None):
         if sync_time:
-            response = urequests.get('http://worldtimeapi.org/api/timezone/Europe/Kiev')
+            _time_endpoint = time_endpoint or 'http://worldtimeapi.org/api/timezone/Europe/Kiev'
+
+            response = urequests.get(_time_endpoint)
             object = response.json()
             [date, time] = object['datetime'].split('T')
             [year, month, day] = date.split('-')
